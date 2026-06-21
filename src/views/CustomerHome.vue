@@ -4,7 +4,7 @@
     
     <!-- Hero Section: Styled as 1920x1080px with hero-bg.png background -->
     <section id="hero" class="hero-section-new section-fullpage">
-      <div class="hero-bg-overlay" style="background-image: url('/images/hero-bg.png');"></div>
+      <div class="hero-bg-overlay" :style="{ backgroundImage: 'url(' + basePath + 'images/hero-bg.png)' }"></div>
       <div class="hero-color-overlay"></div>
       <div class="container hero-grid">
         <div class="hero-text-content">
@@ -25,7 +25,7 @@
           </div>
         </div>
         <div class="hero-image-content">
-          <img src="/images/galer1.jpg" alt="Warung Mie Ayam Baso Tuyem" class="hero-main-img" />
+          <img :src="basePath + 'images/galer1.jpg'" alt="Warung Mie Ayam Baso Tuyem" class="hero-main-img" />
           <div class="promo-badge">
             <span class="badge-icon">🍲</span>
             <div class="badge-text">
@@ -115,7 +115,7 @@
           </div>
         </div>
         <div class="about-image-content">
-          <img src="/images/mie-ayam-bakso.jpg" alt="Sajian Lezat Mie Ayam" class="about-main-img" />
+          <img :src="basePath + 'images/mie-ayam-bakso.jpg'" alt="Sajian Lezat Mie Ayam" class="about-main-img" />
         </div>
       </div>
     </section>
@@ -218,6 +218,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+
+const basePath = import.meta.env.BASE_URL;
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 import MenuCard from '../components/MenuCard.vue';

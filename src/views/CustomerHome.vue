@@ -167,11 +167,7 @@
                 <p>+62 812-2753-0801 (Untuk pesanan katering / rombongan)</p>
               </div>
             </div>
-            <div class="facility-icons">
-              <div class="facility">♿ Akses Kursi Roda</div>
-              <div class="facility">📶 Wi-Fi Gratis</div>
-              <div class="facility">🅿️ Parkir Luas</div>
-            </div>
+
           </div>
         </div>
       </div>

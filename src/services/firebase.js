@@ -3,13 +3,13 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPe
 import * as mockService from './mockService';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD9PuaNV15_ECQY4PKT4Rr5Mj7xZtPNM2Q",
-  authDomain: "website-mie-ayam.firebaseapp.com",
-  projectId: "website-mie-ayam",
-  storageBucket: "website-mie-ayam.firebasestorage.app",
-  messagingSenderId: "670329165256",
-  appId: "1:670329165256:web:690a24c529198148badcfd",
-  measurementId: "G-LLCVN14E41"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const isRealFirebase = !!(firebaseConfig.apiKey && firebaseConfig.authDomain);

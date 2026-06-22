@@ -150,7 +150,7 @@
               <span class="info-icon">📍</span>
               <div>
                 <h4>Alamat Utama</h4>
-                <p>Jl. Pahlawan No. 42, Kebumen, Jawa Tengah (Sebelah utara Alun-Alun Kebumen)</p>
+                <p>Jl, Soka, Petanahan, Kec. Pejagoan, Kabupaten Kebumen, Jawa Tengah 54361</p>
               </div>
             </div>
             <div class="info-group">

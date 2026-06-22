@@ -1,4 +1,5 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://mieayamtuyem.my.id/sitemap.xml
+Sitemap: https://www.mieayamtuyem.my.id/sitemap.xml
+

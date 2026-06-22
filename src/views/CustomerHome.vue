@@ -6,6 +6,14 @@
     <section id="hero" class="hero-section-new section-fullpage">
       <div class="hero-bg-overlay" :style="{ backgroundImage: 'url(' + basePath + 'images/hero-bg.png)' }"></div>
       <div class="hero-color-overlay"></div>
+
+      <!-- Floating decorative elements & emotes -->
+      <div class="floating-decor float-emoji emoji-bowl">🍲</div>
+      <div class="floating-decor float-emoji emoji-noodle">🍜</div>
+      <div class="floating-decor float-emoji emoji-dumpling">🥟</div>
+      <div class="floating-decor float-shape shape-circle-1"></div>
+      <div class="floating-decor float-shape shape-circle-2"></div>
+
       <div class="container hero-grid">
         <div class="hero-text-content">
           <span class="tagline">Kuliner Enak Kebumen</span>
@@ -91,6 +99,11 @@
 
     <!-- Tentang Kami Section: Styled as 1920x1080px -->
     <section id="tentang-kami" class="about-section-new section-fullpage">
+      <!-- Floating decorative elements & emotes -->
+      <div class="floating-decor float-emoji emoji-chili">🌶️</div>
+      <div class="floating-decor float-emoji emoji-cabbage">🥬</div>
+      <div class="floating-decor float-shape shape-circle-3"></div>
+
       <div class="container about-grid">
         <div class="about-text-content">
           <span class="section-tag">Tentang Kami</span>
@@ -122,6 +135,9 @@
 
     <!-- Lokasi & Kontak Section: Styled as 1920x1080px -->
     <section id="lokasi" class="location-section-new section-fullpage">
+      <!-- Floating decorative elements & emotes -->
+      <div class="floating-decor float-emoji emoji-egg">🥚</div>
+
       <div class="container location-section-container">
         <div class="section-header text-center">
           <span class="section-tag">Lokasi Warung</span>
@@ -217,7 +233,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const basePath = import.meta.env.BASE_URL;
 import Header from '../components/Header.vue';
@@ -244,7 +264,7 @@ const categories = [
   { value: 'ekstra', label: 'Ekstra Toping', icon: '🥚' }
 ];
 
-// Fetch menu
+// Fetch menu & Initialize animations
 onMounted(async () => {
   try {
     menuItems.value = await getMenuItems();
@@ -252,8 +272,193 @@ onMounted(async () => {
     console.error('Error loading menu:', error);
   } finally {
     loading.value = false;
+    animateMenuCards();
   }
+
+  // Hero section animations (initial load)
+  const heroTl = gsap.timeline();
+  heroTl.from('.hero-text-content .tagline', {
+    y: 40,
+    opacity: 0,
+    duration: 0.6,
+    ease: 'power3.out'
+  })
+  .from('.hero-heading', {
+    y: 50,
+    opacity: 0,
+    duration: 0.8,
+    ease: 'power3.out'
+  }, '-=0.4')
+  .from('.hero-paragraph', {
+    y: 30,
+    opacity: 0,
+    duration: 0.8,
+    ease: 'power3.out'
+  }, '-=0.6')
+  .from('.hero-buttons', {
+    y: 20,
+    opacity: 0,
+    duration: 0.6,
+    ease: 'power3.out'
+  }, '-=0.6')
+  .from('.hero-image-content', {
+    scale: 0.8,
+    opacity: 0,
+    duration: 1,
+    ease: 'back.out(1.7)'
+  }, '-=0.8')
+  .from('.promo-badge', {
+    scale: 0,
+    opacity: 0,
+    duration: 0.6,
+    ease: 'back.out(2)'
+  }, '-=0.4');
+
+  // Infinite floating and gentle rotation animations for decorative elements & emotes
+  gsap.to('.emoji-bowl', { y: -20, rotation: 10, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-noodle', { y: 25, rotation: -15, duration: 4.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-dumpling', { y: -15, rotation: 12, duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-chili', { y: 20, rotation: 20, duration: 3.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-cabbage', { y: -25, rotation: -10, duration: 4.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-egg', { y: 15, rotation: 15, duration: 3.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  
+  gsap.to('.float-shape', {
+    y: -15,
+    scale: 1.05,
+    duration: 5,
+    repeat: -1,
+    yoyo: true,
+    ease: 'sine.inOut',
+    stagger: 0.5
+  });
+
+  // Scroll trigger animations
+  // About Section
+  gsap.from('.about-text-content .section-tag', {
+    scrollTrigger: {
+      trigger: '.about-section-new',
+      start: 'top 80%',
+    },
+    y: 30,
+    opacity: 0,
+    duration: 0.5
+  });
+  
+  gsap.from('.about-text-content .section-title, .about-text-content .about-paragraph', {
+    scrollTrigger: {
+      trigger: '.about-section-new',
+      start: 'top 75%',
+    },
+    y: 40,
+    opacity: 0,
+    duration: 0.8,
+    stagger: 0.2
+  });
+
+  gsap.from('.highlight-box', {
+    scrollTrigger: {
+      trigger: '.highlight-boxes',
+      start: 'top 80%',
+    },
+    y: 30,
+    opacity: 0,
+    duration: 0.6,
+    stagger: 0.2,
+    ease: 'power2.out'
+  });
+
+  // Image scale transitions on scroll
+  gsap.from('.about-main-img', {
+    scrollTrigger: {
+      trigger: '.about-section-new',
+      start: 'top 70%',
+      scrub: 1
+    },
+    scale: 0.7,
+    duration: 1.5
+  });
+
+  gsap.from('.hero-main-img', {
+    scrollTrigger: {
+      trigger: '#hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true
+    },
+    scale: 1.1,
+    y: 50
+  });
+
+  // Location section
+  gsap.from('.location-section-new .section-header', {
+    scrollTrigger: {
+      trigger: '.location-section-new',
+      start: 'top 80%',
+    },
+    y: 40,
+    opacity: 0,
+    duration: 0.8
+  });
+
+  gsap.from('.map-container', {
+    scrollTrigger: {
+      trigger: '.location-grid',
+      start: 'top 80%',
+    },
+    scale: 0.9,
+    opacity: 0,
+    duration: 1,
+    ease: 'power2.out'
+  });
+
+  gsap.from('.info-card', {
+    scrollTrigger: {
+      trigger: '.location-grid',
+      start: 'top 80%',
+    },
+    x: 50,
+    opacity: 0,
+    duration: 1,
+    ease: 'power2.out'
+  });
 });
+
+// Watch category filters change to trigger stagger animations for cards
+watch(activeCategory, () => {
+  animateMenuCards();
+});
+
+const animateMenuCards = () => {
+  nextTick(() => {
+    // Kill old triggers on .menu-col if any to avoid duplication/overlapping
+    const triggers = ScrollTrigger.getAll();
+    triggers.forEach(t => {
+      if (t.trigger && t.trigger.classList && t.trigger.classList.contains('menu-col')) {
+        t.kill();
+      }
+    });
+
+    gsap.killTweensOf('.menu-col');
+    
+    // Set initial state for clean animation
+    gsap.set('.menu-col', { y: 35, opacity: 0, scale: 0.96 });
+    
+    ScrollTrigger.batch('.menu-col', {
+      onEnter: batch => gsap.to(batch, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        stagger: 0.06,
+        overwrite: 'auto',
+        ease: 'power2.out',
+        duration: 0.4
+      }),
+      start: 'top 95%'
+    });
+
+    ScrollTrigger.refresh();
+  });
+};
 
 // Cart helper methods
 const getQuantityInCart = (itemId) => {
@@ -1031,5 +1236,57 @@ const handleSuccessClose = () => {
   .price-info .price {
     font-size: 1.1rem;
   }
+}
+
+/* Floating Decor Styles */
+.floating-decor {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  opacity: 0.7;
+}
+
+.float-emoji {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+}
+
+.float-shape {
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.03) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.1);
+  backdrop-filter: blur(1px);
+}
+
+.emoji-bowl { top: 15%; left: 6%; font-size: 3.5rem; }
+.emoji-noodle { bottom: 15%; left: 38%; font-size: 3.2rem; }
+.emoji-dumpling { top: 18%; right: 8%; font-size: 3rem; }
+.emoji-chili { top: 12%; left: 4%; font-size: 3rem; }
+.emoji-cabbage { bottom: 10%; right: 6%; font-size: 3.5rem; }
+.emoji-egg { top: 25%; right: 10%; font-size: 2.8rem; }
+
+.shape-circle-1 { width: 140px; height: 140px; top: 8%; right: 4%; }
+.shape-circle-2 { width: 90px; height: 90px; bottom: 8%; left: 10%; }
+.shape-circle-3 { width: 110px; height: 110px; top: 35%; left: 45%; }
+
+/* Micro-interaction Hovers */
+.category-tab {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.category-tab:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.btn {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+.btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: translateY(-1px) scale(0.98);
 }
 </style>

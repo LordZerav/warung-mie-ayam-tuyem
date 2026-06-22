@@ -223,3 +223,8 @@ export const mockGetCurrentAdmin = () => {
   const session = sessionStorage.getItem('tuyem_admin_session');
   return session ? JSON.parse(session) : null;
 };
+
+export const mockUpdateTableStatus = (tableNum, newStatus) => {
+  console.log(`Mock: Updated table ${tableNum} status to ${newStatus}`);
+  return { table_number: tableNum, status: newStatus };
+};

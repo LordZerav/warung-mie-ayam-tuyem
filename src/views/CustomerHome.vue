@@ -1,6 +1,25 @@
 <template>
   <div class="customer-home animate-fade">
-    <Header />
+    <!-- Advanced Preloader Screen -->
+    <div v-if="showPreloader" class="preloader-overlay">
+      <div class="preloader-content">
+        <span class="preloader-logo">🍲</span>
+        <h1 class="preloader-title">
+          <span class="char">T</span>
+          <span class="char">u</span>
+          <span class="char">y</span>
+          <span class="char">e</span>
+          <span class="char">m</span>
+        </h1>
+        <p class="preloader-status">Menyiapkan hidangan lezat...</p>
+        <div class="preloader-bar-wrap">
+          <div class="preloader-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content-wrap" :class="{ 'ready': !showPreloader }">
+      <Header />
     
     <!-- Hero Section: Styled as 1920x1080px with hero-bg.png background -->
     <section id="hero" class="hero-section-new section-fullpage">
@@ -208,8 +227,9 @@
         </button>
       </div>
     </div>
+  </div>
 
-    <!-- Modals -->
+  <!-- Modals -->
     <CartModal 
       :isOpen="isCartOpen"
       :cart="cart"
@@ -248,6 +268,7 @@ import OrderSuccessModal from '../components/OrderSuccessModal.vue';
 import { getMenuItems, createOrder } from '../services/supabase';
 
 // State
+const showPreloader = ref(true);
 const menuItems = ref([]);
 const loading = ref(true);
 const activeCategory = ref('semua');
@@ -266,6 +287,17 @@ const categories = [
 
 // Fetch menu & Initialize animations
 onMounted(async () => {
+  // Instantly hide all hero section elements to prevent FOUC (flash of unstyled content)
+  gsap.set('.hero-bg-overlay', { scale: 1.2, opacity: 0 });
+  gsap.set('.hero-text-content .tagline', { x: -30, opacity: 0 });
+  gsap.set('.hero-heading', { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0, y: 30 });
+  gsap.set('.hero-paragraph', { y: 20, opacity: 0 });
+  gsap.set('.hero-buttons', { scale: 0.9, opacity: 0 });
+  gsap.set('.hero-image-content', { scale: 0.8, opacity: 0 });
+  gsap.set('.promo-badge', { scale: 0, opacity: 0 });
+  gsap.set('.float-emoji', { scale: 0, opacity: 0, y: 50 });
+  gsap.set('.float-shape', { scale: 0, opacity: 0 });
+
   try {
     menuItems.value = await getMenuItems();
   } catch (error) {
@@ -275,64 +307,33 @@ onMounted(async () => {
     animateMenuCards();
   }
 
-  // Hero section animations (initial load)
-  const heroTl = gsap.timeline();
-  heroTl.from('.hero-text-content .tagline', {
-    y: 40,
-    opacity: 0,
-    duration: 0.6,
-    ease: 'power3.out'
-  })
-  .from('.hero-heading', {
-    y: 50,
-    opacity: 0,
-    duration: 0.8,
-    ease: 'power3.out'
-  }, '-=0.4')
-  .from('.hero-paragraph', {
-    y: 30,
-    opacity: 0,
-    duration: 0.8,
-    ease: 'power3.out'
-  }, '-=0.6')
-  .from('.hero-buttons', {
-    y: 20,
-    opacity: 0,
-    duration: 0.6,
-    ease: 'power3.out'
-  }, '-=0.6')
-  .from('.hero-image-content', {
-    scale: 0.8,
-    opacity: 0,
-    duration: 1,
-    ease: 'back.out(1.7)'
-  }, '-=0.8')
-  .from('.promo-badge', {
-    scale: 0,
-    opacity: 0,
-    duration: 0.6,
-    ease: 'back.out(2)'
-  }, '-=0.4');
-
-  // Infinite floating and gentle rotation animations for decorative elements & emotes
-  gsap.to('.emoji-bowl', { y: -20, rotation: 10, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  gsap.to('.emoji-noodle', { y: 25, rotation: -15, duration: 4.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  gsap.to('.emoji-dumpling', { y: -15, rotation: 12, duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  gsap.to('.emoji-chili', { y: 20, rotation: 20, duration: 3.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  gsap.to('.emoji-cabbage', { y: -25, rotation: -10, duration: 4.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  gsap.to('.emoji-egg', { y: 15, rotation: 15, duration: 3.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-  
-  gsap.to('.float-shape', {
-    y: -15,
-    scale: 1.05,
-    duration: 5,
-    repeat: -1,
-    yoyo: true,
-    ease: 'sine.inOut',
-    stagger: 0.5
+  // Preloader GSAP Timeline
+  const preloaderTl = gsap.timeline({
+    onComplete: () => {
+      showPreloader.value = false;
+      triggerHeroEntrance();
+    }
   });
 
-  // Scroll trigger animations
+  preloaderTl.fromTo('.preloader-logo', 
+    { scale: 0.5, rotation: -20, opacity: 0 },
+    { scale: 1, rotation: 0, opacity: 1, duration: 0.8, ease: 'back.out(1.7)' }
+  )
+  .fromTo('.preloader-title .char',
+    { y: 30, opacity: 0 },
+    { y: 0, opacity: 1, stagger: 0.08, duration: 0.5, ease: 'power2.out' },
+    '-=0.4'
+  )
+  .from('.preloader-status', { opacity: 0, y: 10, duration: 0.4 }, '-=0.2')
+  .to('.preloader-bar', { width: '100%', duration: 1.2, ease: 'power1.inOut' }, '-=0.2')
+  .to('.preloader-content', { scale: 0.9, opacity: 0, duration: 0.4 })
+  .to('.preloader-overlay', { 
+    y: '-100%', 
+    duration: 0.8, 
+    ease: 'power4.inOut' 
+  }, '-=0.1');
+
+  // Scroll trigger animations for other sections
   // About Section
   gsap.from('.about-text-content .section-tag', {
     scrollTrigger: {
@@ -422,6 +423,104 @@ onMounted(async () => {
     ease: 'power2.out'
   });
 });
+
+const triggerHeroEntrance = () => {
+  nextTick(() => {
+    // Initial states to avoid flashing
+    gsap.set('.hero-bg-overlay', { scale: 1.2, opacity: 0 });
+    gsap.set('.hero-text-content .tagline', { x: -30, opacity: 0 });
+    gsap.set('.hero-heading', { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0, y: 30 });
+    gsap.set('.hero-paragraph', { y: 20, opacity: 0 });
+    gsap.set('.hero-buttons', { scale: 0.9, opacity: 0 });
+    gsap.set('.hero-image-content', { scale: 0.8, opacity: 0 });
+    gsap.set('.promo-badge', { scale: 0, opacity: 0 });
+    gsap.set('.float-emoji', { scale: 0, opacity: 0, y: 50 });
+    gsap.set('.float-shape', { scale: 0, opacity: 0 });
+
+    const heroTl = gsap.timeline();
+    heroTl.to('.hero-bg-overlay', {
+      scale: 1,
+      opacity: 1,
+      duration: 1.5,
+      ease: 'power3.out'
+    })
+    .to('.hero-text-content .tagline', {
+      x: 0,
+      opacity: 1,
+      duration: 0.6,
+      ease: 'power2.out'
+    }, '-=1.2')
+    .to('.hero-heading', {
+      clipPath: 'inset(0% 0% 0% 0%)',
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'power3.out'
+    }, '-=0.9')
+    .to('.hero-paragraph', {
+      y: 0,
+      opacity: 1,
+      duration: 0.8,
+      ease: 'power2.out'
+    }, '-=0.7')
+    .to('.hero-buttons', {
+      scale: 1,
+      opacity: 1,
+      duration: 0.6,
+      ease: 'back.out(1.5)'
+    }, '-=0.6')
+    .to('.hero-image-content', {
+      scale: 1,
+      opacity: 1,
+      duration: 1.2,
+      ease: 'power3.out'
+    }, '-=0.8')
+    .to('.promo-badge', {
+      scale: 1,
+      opacity: 1,
+      duration: 0.6,
+      ease: 'back.out(2)'
+    }, '-=0.6')
+    .to('.float-emoji', {
+      scale: 1,
+      opacity: 0.7,
+      y: 0,
+      stagger: 0.08,
+      duration: 0.8,
+      ease: 'back.out(1.5)'
+    }, '-=0.6')
+    .to('.float-shape', {
+      scale: 1,
+      opacity: 0.7,
+      stagger: 0.1,
+      duration: 0.8,
+      ease: 'back.out(1.2)'
+    }, '-=0.8')
+    .add(() => {
+      startFloatingLoops();
+    });
+  });
+};
+
+const startFloatingLoops = () => {
+  // Infinite floating and gentle rotation animations for decorative elements & emotes
+  gsap.to('.emoji-bowl', { y: -20, rotation: 10, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-noodle', { y: 25, rotation: -15, duration: 4.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-dumpling', { y: -15, rotation: 12, duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-chili', { y: 20, rotation: 20, duration: 3.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-cabbage', { y: -25, rotation: -10, duration: 4.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  gsap.to('.emoji-egg', { y: 15, rotation: 15, duration: 3.2, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+  
+  gsap.to('.float-shape', {
+    y: -15,
+    scale: 1.05,
+    duration: 5,
+    repeat: -1,
+    yoyo: true,
+    ease: 'sine.inOut',
+    stagger: 0.5
+  });
+};
 
 // Watch category filters change to trigger stagger animations for cards
 watch(activeCategory, () => {
@@ -1238,6 +1337,79 @@ const handleSuccessClose = () => {
   }
 }
 
+/* Advanced Preloader Screen */
+.preloader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: #1c1917; /* Dark matching theme */
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.preloader-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.preloader-logo {
+  font-size: 4.5rem;
+  display: inline-block;
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.3));
+}
+
+.preloader-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--primary);
+  margin: 0;
+  letter-spacing: 4px;
+  overflow: hidden;
+  display: flex;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+.preloader-title .char {
+  display: inline-block;
+}
+
+.preloader-status {
+  font-size: 0.95rem;
+  color: #a8a29e;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.preloader-bar-wrap {
+  width: 240px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preloader-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background-color: var(--primary);
+  box-shadow: 0 0 15px var(--primary);
+  border-radius: var(--radius-full);
+}
+
 /* Floating Decor Styles */
 .floating-decor {
   position: absolute;
@@ -1288,5 +1460,29 @@ const handleSuccessClose = () => {
 
 .btn:active {
   transform: translateY(-1px) scale(0.98);
+}
+
+/* Wrapper to prevent FOUC (flash of unstyled content) */
+.main-content-wrap {
+  opacity: 0;
+  pointer-events: none; /* Block interactions before ready */
+  transition: opacity 0.4s ease;
+}
+.main-content-wrap.ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Fallback hiding properties for Hero layout to block rendering before animation starts */
+.hero-bg-overlay,
+.hero-text-content .tagline,
+.hero-heading,
+.hero-paragraph,
+.hero-buttons,
+.hero-image-content,
+.promo-badge,
+.float-emoji,
+.float-shape {
+  opacity: 0;
 }
 </style>

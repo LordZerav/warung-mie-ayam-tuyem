@@ -3,8 +3,26 @@
     <!-- Toast Notification -->
     <transition name="toast-slide">
       <div v-if="toast.show" class="toast-notification" :class="toast.type">
-        <span class="toast-icon">{{ toast.type === 'success' ? '✅' : '❌' }}</span>
+        <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
         <span>{{ toast.message }}</span>
+      </div>
+    </transition>
+
+    <!-- Custom Confirm Modal -->
+    <transition name="modal-fade">
+      <div v-if="confirmModal.show" class="confirm-overlay" @click.self="confirmModal.show = false">
+        <div class="confirm-box animate-pop">
+          <div class="confirm-icon-wrap" :class="confirmModal.danger ? 'danger' : 'warning'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </div>
+          <h3 class="confirm-title">{{ confirmModal.title }}</h3>
+          <p class="confirm-message">{{ confirmModal.message }}</p>
+          <div class="confirm-actions">
+            <button class="confirm-btn-cancel" @click="confirmModal.show = false">Batal</button>
+            <button class="confirm-btn-ok" :class="confirmModal.danger ? 'danger' : ''" @click="confirmModal.onConfirm(); confirmModal.show = false">{{ confirmModal.okLabel || 'Ya, Lanjutkan' }}</button>
+          </div>
+        </div>
       </div>
     </transition>
 
@@ -320,8 +338,13 @@
             <!-- Tables List Grid -->
             <div class="tables-grid">
               <div v-for="table in tables" :key="table" class="table-item-card animate-pop">
-                <div class="table-num-badge">Meja {{ table }}</div>
-                <button @click="removeTable(table)" class="table-delete-btn" title="Hapus Meja">
+                <div class="table-chair-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11V3H5v8"/><path d="M15 11V3h4v8"/><path d="M5 11h14"/><path d="M12 11v5"/><path d="M9 16h6"/><path d="M9 19h6"/></svg>
+                </div>
+                <div class="table-num-text">Meja</div>
+                <div class="table-num-badge">{{ table }}</div>
+                <button @click="openConfirmRemoveTable(table)" class="table-delete-btn" title="Hapus Meja">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4h6v2"></path></svg>
                   Hapus
                 </button>
               </div>
@@ -597,15 +620,21 @@ const toggleMenuStock = async (menuItem) => {
 };
 
 const deleteMenu = async (id) => {
-  if (confirm('Apakah Anda yakin ingin menghapus menu ini secara permanen?')) {
-    try {
-      await deleteMenuItem(id);
-      showToast('Menu berhasil dihapus.');
-      loadMenuData();
-    } catch (e) {
-      showToast('Gagal menghapus menu.', 'error');
+  openConfirm({
+    title: 'Hapus Menu?',
+    message: 'Menu ini akan dihapus secara permanen dan tidak bisa dikembalikan.',
+    okLabel: 'Ya, Hapus',
+    danger: true,
+    onConfirm: async () => {
+      try {
+        await deleteMenuItem(id);
+        showToast('Menu berhasil dihapus.');
+        loadMenuData();
+      } catch (e) {
+        showToast('Gagal menghapus menu.', 'error');
+      }
     }
-  }
+  });
 };
 
 // Table Actions
@@ -622,26 +651,46 @@ const submitTableForm = async () => {
   }
 };
 
-const removeTable = async (tableNum) => {
-  if (confirm(`Hapus Meja ${tableNum}?`)) {
-    try {
-      await deleteTable(tableNum);
-      showToast(`Meja ${tableNum} berhasil dihapus.`);
-      loadTableData();
-    } catch (e) {
-      showToast('Gagal menghapus meja.', 'error');
+const openConfirmRemoveTable = (tableNum) => {
+  openConfirm({
+    title: `Hapus Meja ${tableNum}?`,
+    message: 'Meja ini akan dihapus dari daftar pilihan pelanggan.',
+    okLabel: 'Ya, Hapus',
+    danger: true,
+    onConfirm: async () => {
+      try {
+        await deleteTable(tableNum);
+        showToast(`Meja ${tableNum} berhasil dihapus.`);
+        loadTableData();
+      } catch (e) {
+        showToast('Gagal menghapus meja.', 'error');
+      }
     }
-  }
+  });
 };
+
+const removeTable = openConfirmRemoveTable;
 
 // Auth Actions
 const handleLogout = async () => {
-  if (confirm('Apakah Anda yakin ingin keluar?')) {
-    if (unsubscribeOrdersRef) { unsubscribeOrdersRef.unsubscribe(); unsubscribeOrdersRef = null; }
-    if (typeof unsubscribeAuthRef === 'function') { unsubscribeAuthRef(); unsubscribeAuthRef = null; }
-    await logoutAdmin();
-    router.push({ name: 'AdminLogin' });
-  }
+  openConfirm({
+    title: 'Keluar dari Dashboard?',
+    message: 'Sesi admin Anda akan diakhiri dan Anda akan diarahkan ke halaman login.',
+    okLabel: 'Ya, Keluar',
+    danger: false,
+    onConfirm: async () => {
+      if (unsubscribeOrdersRef) { unsubscribeOrdersRef.unsubscribe(); unsubscribeOrdersRef = null; }
+      if (typeof unsubscribeAuthRef === 'function') { unsubscribeAuthRef(); unsubscribeAuthRef = null; }
+      await logoutAdmin();
+      router.push({ name: 'AdminLogin' });
+    }
+  });
+};
+
+// Custom confirm modal state
+const confirmModal = ref({ show: false, title: '', message: '', okLabel: '', danger: false, onConfirm: () => {} });
+const openConfirm = ({ title, message, okLabel = 'Ya, Lanjutkan', danger = false, onConfirm }) => {
+  confirmModal.value = { show: true, title, message, okLabel, danger, onConfirm };
 };
 </script>
 
@@ -656,29 +705,132 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 0.95rem;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  font-size: 0.9rem;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06);
   min-width: 280px;
   max-width: 400px;
 }
 .toast-notification.success {
-  background-color: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
+  background-color: #0d1f18;
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 .toast-notification.error {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  background-color: #1f0d0d;
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .toast-slide-enter-active, .toast-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .toast-slide-enter-from, .toast-slide-leave-to {
   opacity: 0;
-  transform: translateX(40px);
+  transform: translateX(40px) scale(0.95);
+}
+
+/* Custom Confirm Modal */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.confirm-box {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 36px 32px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+.confirm-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.confirm-icon-wrap.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+}
+.confirm-icon-wrap.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 2px solid rgba(245, 158, 11, 0.3);
+}
+.confirm-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f9fafb;
+  margin-bottom: 10px;
+}
+.confirm-message {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+.confirm-btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.confirm-btn-cancel:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f9fafb;
+}
+.confirm-btn-ok {
+  flex: 1;
+  padding: 12px;
+  background: #f59e0b;
+  border-radius: 10px;
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+.confirm-btn-ok:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+.confirm-btn-ok.danger {
+  background: #ef4444;
+  color: #fff;
+}
+.confirm-btn-ok.danger:hover {
+  background: #dc2626;
+}
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: all 0.25s ease;
+}
+.modal-fade-enter-from, .modal-fade-leave-to {
+  opacity: 0;
 }
 
 /* Loading States */
@@ -712,13 +864,14 @@ const handleLogout = async () => {
 
 /* Topbar */
 .topbar {
-  background-color: var(--bg-dark);
+  background: linear-gradient(90deg, #111111 0%, #1a1a1a 100%);
   color: var(--text-light);
-  padding: 16px 28px;
+  padding: 14px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid var(--primary);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.4);
   position: sticky;
   top: 0;
   z-index: 80;
@@ -803,25 +956,28 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  color: #a8a29e;
+  padding: 13px 16px;
+  border-radius: 10px;
+  color: #78716c;
   font-weight: 600;
-  font-size: 0.95rem;
-  transition: var(--transition);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
   position: relative;
   text-align: left;
   width: 100%;
+  border-left: 3px solid transparent;
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  color: var(--text-light);
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #d6d3d1;
+  border-left-color: rgba(245, 158, 11, 0.3);
 }
 
 .nav-item.active {
-  background-color: var(--primary);
-  color: var(--bg-dark);
+  background: linear-gradient(90deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06));
+  color: #f59e0b;
+  border-left-color: #f59e0b;
 }
 
 .view-site {
@@ -1436,17 +1592,35 @@ input:checked + .slider:before {
 }
 
 .add-table-card {
-  background-color: #ffffff;
+  background: linear-gradient(145deg, #1a1a1a, #141414);
   padding: 24px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  border-radius: 16px;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .add-table-card h3 {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   margin-bottom: 16px;
+  color: #f5f5f4;
+}
+
+.add-table-card .form-control {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  color: #f5f5f4;
+  border-radius: 10px;
+}
+
+.add-table-card .form-control:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+  background: rgba(245,158,11,0.04);
+}
+
+.add-table-card .form-control::placeholder {
+  color: #57534e;
 }
 
 .inline-form {
@@ -1457,44 +1631,82 @@ input:checked + .slider:before {
 
 .tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 16px;
 }
 
 .table-item-card {
-  background-color: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px;
+  background: linear-gradient(145deg, #1c1c1c, #161616);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition);
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: all 0.25s ease;
+  cursor: default;
 }
 
 .table-item-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary);
+  transform: translateY(-4px);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4), 0 0 20px rgba(245,158,11,0.08);
+}
+
+.table-chair-icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  border: 1.5px solid rgba(245, 158, 11, 0.2);
+  transition: all 0.25s ease;
+}
+
+.table-item-card:hover .table-chair-icon {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.table-num-text {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #78716c;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
 .table-num-badge {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
-  background-color: var(--primary-light);
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f5f5f4;
+  line-height: 1;
 }
 
 .table-delete-btn {
-  font-size: 0.8rem;
-  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: #6b7280;
   font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  background: rgba(239, 68, 68, 0);
+  border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .table-delete-btn:hover {
-  text-decoration: underline;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 </style>

@@ -22,8 +22,8 @@
       <Header />
     
     <!-- Hero Section: Styled as 1920x1080px with hero-bg.png background -->
-    <section id="hero" class="hero-section-new section-fullpage">
-      <div class="hero-bg-overlay" :style="{ backgroundImage: 'url(' + basePath + 'images/hero-bg.png)' }"></div>
+    <section id="hero" class="hero-section-new section-fullpage" @mousemove="onHeroMouseMove" @mouseleave="onHeroMouseLeave">
+      <div class="hero-bg-overlay" :style="{ backgroundImage: 'url(' + basePath + 'images/hero-bg.png)', transform: `translateY(${parallaxBg}px)` }"></div>
       <div class="hero-color-overlay"></div>
 
       <!-- Floating decorative elements & emotes -->
@@ -51,7 +51,7 @@
             </a>
           </div>
         </div>
-        <div class="hero-image-content">
+        <div class="hero-image-content" :style="{ transform: `translate(${cursorParallax.x}px, ${cursorParallax.y}px)` }">
           <img :src="basePath + 'images/galer1.jpg'" alt="Warung Mie Ayam Baso Tuyem" class="hero-main-img" />
           <div class="promo-badge">
             <span class="badge-icon">🍲</span>
@@ -253,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -278,6 +278,37 @@ const isSuccessOpen = ref(false);
 const createdOrder = ref({});
 const whatsappRedirectUrl = ref('');
 
+// Parallax state
+const parallaxBg = ref(0);
+const cursorParallax = ref({ x: 0, y: 0 });
+let rafId = null;
+let targetCursor = { x: 0, y: 0 };
+let currentCursor = { x: 0, y: 0 };
+
+// Smooth cursor lerp loop
+const lerpCursor = () => {
+  const ease = 0.08;
+  currentCursor.x += (targetCursor.x - currentCursor.x) * ease;
+  currentCursor.y += (targetCursor.y - currentCursor.y) * ease;
+  cursorParallax.value = { x: currentCursor.x, y: currentCursor.y };
+  rafId = requestAnimationFrame(lerpCursor);
+};
+
+const onHeroMouseMove = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const mx = e.clientX - rect.left - cx;
+  const my = e.clientY - rect.top - cy;
+  // Max 14px movement
+  targetCursor.x = (mx / cx) * 14;
+  targetCursor.y = (my / cy) * 8;
+};
+
+const onHeroMouseLeave = () => {
+  targetCursor = { x: 0, y: 0 };
+};
+
 const categories = [
   { value: 'semua', label: 'Semua Menu', icon: '🍽️' },
   { value: 'makanan', label: 'Mie & Bakso', icon: '🍜' },
@@ -287,6 +318,9 @@ const categories = [
 
 // Fetch menu & Initialize animations
 onMounted(async () => {
+  // Start cursor lerp loop
+  lerpCursor();
+
   // Instantly hide all hero section elements to prevent FOUC (flash of unstyled content)
   gsap.set('.hero-bg-overlay', { scale: 1.2, opacity: 0 });
   gsap.set('.hero-text-content .tagline', { x: -30, opacity: 0 });
@@ -422,6 +456,100 @@ onMounted(async () => {
     duration: 1,
     ease: 'power2.out'
   });
+
+  // ========== PARALLAX EFFECTS ==========
+
+  // 1. Hero background parallax (moves slower than scroll = depth)
+  gsap.to('.hero-bg-overlay', {
+    scrollTrigger: {
+      trigger: '#hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: true
+    },
+    y: '25%',
+    ease: 'none'
+  });
+
+  // 2. Hero text parallax (moves slightly faster = floats forward)
+  gsap.to('.hero-text-content', {
+    scrollTrigger: {
+      trigger: '#hero',
+      start: 'top top',
+      end: 'bottom top',
+      scrub: 1.5
+    },
+    y: '-12%',
+    ease: 'none'
+  });
+
+  // 3. Floating emoji parallax depths (each at different speed)
+  gsap.to('.emoji-bowl', {
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2 },
+    y: '-80px', ease: 'none'
+  });
+  gsap.to('.emoji-noodle', {
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 3 },
+    y: '-120px', ease: 'none'
+  });
+  gsap.to('.emoji-dumpling', {
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1.5 },
+    y: '-60px', ease: 'none'
+  });
+
+  // 4. About section — image comes up from below (depth reveal)
+  gsap.to('.about-image-content', {
+    scrollTrigger: {
+      trigger: '.about-section-new',
+      start: 'top bottom',
+      end: 'bottom top',
+      scrub: 1.5
+    },
+    y: '-40px',
+    ease: 'none'
+  });
+
+  // 5. About floating emojis scroll parallax
+  gsap.to('.emoji-chili', {
+    scrollTrigger: { trigger: '.about-section-new', start: 'top bottom', end: 'bottom top', scrub: 2 },
+    y: '-100px', ease: 'none'
+  });
+  gsap.to('.emoji-cabbage', {
+    scrollTrigger: { trigger: '.about-section-new', start: 'top bottom', end: 'bottom top', scrub: 3 },
+    y: '-70px', ease: 'none'
+  });
+
+  // 6. Location section – map container mild lift
+  gsap.to('.map-container', {
+    scrollTrigger: {
+      trigger: '.location-section-new',
+      start: 'top bottom',
+      end: 'bottom top',
+      scrub: 2
+    },
+    y: '-30px',
+    ease: 'none'
+  });
+
+  // 7. Section shape parallax
+  gsap.to('.shape-circle-1', {
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1 },
+    y: '-50px', x: '20px', ease: 'none'
+  });
+  gsap.to('.shape-circle-2', {
+    scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2 },
+    y: '-90px', x: '-15px', ease: 'none'
+  });
+  gsap.to('.shape-circle-3', {
+    scrollTrigger: { trigger: '.about-section-new', start: 'top bottom', end: 'bottom top', scrub: 1.5 },
+    y: '-60px', ease: 'none'
+  });
+});
+
+onUnmounted(() => {
+  // Cancel lerp loop to prevent memory leak
+  if (rafId) cancelAnimationFrame(rafId);
+  ScrollTrigger.getAll().forEach(t => t.kill());
 });
 
 const triggerHeroEntrance = () => {

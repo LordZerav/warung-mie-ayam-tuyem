@@ -34,10 +34,10 @@
         <h3>Hubungi Kami</h3>
         <p class="contact-info">📍 Jl. Pahlawan No. 42, Kebumen</p>
         <p class="contact-info">📞 0812-2753-0801</p>
-        <p class="contact-info">✉️ info@mieayamtuyem.com</p>
+        <p class="contact-info">✉️ belumadaemail@mieayamtuyem.com</p>
         <div class="status-indicator">
           <span class="dot"></span>
-          <span>Buka Setiap Hari (09:00 - 21:00)</span>
+          <span>Buka Setiap Hari (11:00 - 20:00)</span>
         </div>
       </div>
     </div>

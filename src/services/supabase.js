@@ -3,11 +3,25 @@ import * as mockService from './mockService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Gunakan admin secret dari env, atau fallback ke key default agar tidak crash
+const adminSecret = import.meta.env.VITE_ADMIN_SECRET || 'tuyem_admin_secret_key_123';
 
 // Check if credentials are provided
 const isRealSupabase = !!(supabaseUrl && supabaseAnonKey);
 
+// Client biasa untuk customer (hanya membaca menu, mengirim order)
 export const supabase = isRealSupabase ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// Client khusus admin dengan header otorisasi RLS tambahan
+export const supabaseAdmin = isRealSupabase 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          'x-admin-secret': adminSecret
+        }
+      }
+    })
+  : null;
 
 // Wrappers that auto-fallback to mock if real credentials are not present
 export const getMenuItems = async () => {
@@ -32,7 +46,7 @@ export const saveMenuItem = async (item) => {
   if (isRealSupabase) {
     try {
       if (item.id && !item.id.toString().startsWith('menu-')) {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
           .from('menu_items')
           .update(item)
           .eq('id', item.id)
@@ -45,7 +59,7 @@ export const saveMenuItem = async (item) => {
         if (dbItem.id === null || dbItem.id === undefined || dbItem.id.toString().startsWith('menu-')) {
           delete dbItem.id;
         }
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
           .from('menu_items')
           .insert([dbItem])
           .select();
@@ -63,7 +77,7 @@ export const saveMenuItem = async (item) => {
 export const deleteMenuItem = async (id) => {
   if (isRealSupabase) {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('menu_items')
         .delete()
         .eq('id', id);
@@ -98,7 +112,7 @@ export const getTables = async () => {
 export const saveTable = async (tableNum) => {
   if (isRealSupabase) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('tables')
         .upsert([{ table_number: tableNum, is_active: true }])
         .select();
@@ -115,7 +129,7 @@ export const saveTable = async (tableNum) => {
 export const deleteTable = async (tableNum) => {
   if (isRealSupabase) {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('tables')
         .update({ is_active: false })
         .eq('table_number', tableNum);
@@ -185,7 +199,7 @@ export const createOrder = async (orderData, items) => {
 export const updateOrderStatus = async (orderId, status) => {
   if (isRealSupabase) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('orders')
         .update({ status })
         .eq('id', orderId)
@@ -205,7 +219,7 @@ export const updateOrderStatus = async (orderId, status) => {
 export const updateTableStatus = async (tableNum, newStatus) => {
   if (isRealSupabase) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('tables')
         .update({ status: newStatus })
         .eq('table_number', tableNum)
@@ -245,7 +259,7 @@ export const uploadMenuImage = async (file) => {
 export const subscribeOrders = (onUpdate) => {
   if (isRealSupabase) {
     // Standard Supabase realtime subscription
-    const channel = supabase
+    const channel = supabaseAdmin
       .channel('schema-db-changes')
       .on(
         'postgres_changes',
@@ -257,7 +271,7 @@ export const subscribeOrders = (onUpdate) => {
         async () => {
           // Fetch all orders again to supply full data with items
           try {
-            const { data, error } = await supabase
+            const { data, error } = await supabaseAdmin
               .from('orders')
               .select(`
                 *,
@@ -273,7 +287,7 @@ export const subscribeOrders = (onUpdate) => {
       .subscribe();
 
     // Initial fetch
-    supabase
+    supabaseAdmin
       .from('orders')
       .select(`
         *,
@@ -286,7 +300,7 @@ export const subscribeOrders = (onUpdate) => {
 
     return {
       unsubscribe: () => {
-        supabase.removeChannel(channel);
+        supabaseAdmin.removeChannel(channel);
       }
     };
   }
